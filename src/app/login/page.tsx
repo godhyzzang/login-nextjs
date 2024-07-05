@@ -5,11 +5,22 @@ import { useState } from "react";
 import FormButton from "@/components/form-btn";
 import FormInput from "@/components/form-input";
 import SocialLogin from "@/components/social-login";
-import { useFormState } from "react-dom";
 import { handleForm } from "./actions";
 
+// Define the type for the state
+interface State {
+  errors: string[];
+}
+
+// Define the type for the result returned by handleForm
+interface FormResult {
+  success: boolean;
+  message?: string;
+  errors?: string[];
+}
+
 export default function LogIn() {
-  const [state, action] = useFormState(handleForm, null);
+  const [state, setState] = useState<State>({ errors: [] });
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: any) => {
@@ -17,7 +28,7 @@ export default function LogIn() {
     setSubmitting(true);
 
     const formData = new FormData(e.target);
-    const result = await handleForm(state, formData);
+    const result: FormResult = await handleForm(state, formData);
 
     if (result.success) {
       // Handle successful login
@@ -26,12 +37,8 @@ export default function LogIn() {
     } else {
       // Handle login failure
       console.error("Login failed!", result.errors);
-      alert(result.errors?.join("\n"));
-
-      // Update state with errors if needed
-      // action({
-      //   errors: result.errors,
-      // });
+      setState({ errors: result.errors ?? [] });
+      alert((result.errors ?? []).join("\n"));
     }
 
     setSubmitting(false);
@@ -49,20 +56,29 @@ export default function LogIn() {
           type="email"
           placeholder="Email"
           required
-          errors={[]}
+          errors={state.errors.filter((error) =>
+            error.toLowerCase().includes("email")
+          )}
+        />
+        <FormInput
+          name="username"
+          type="text"
+          placeholder="Username"
+          required
+          errors={state.errors.filter((error) =>
+            error.toLowerCase().includes("username")
+          )}
         />
         <FormInput
           name="password"
           type="password"
           placeholder="Password"
           required
-          errors={state?.errors ?? []}
+          errors={state.errors.filter((error) =>
+            error.toLowerCase().includes("password")
+          )}
         />
-        <FormButton
-          type="submit"
-          text={submitting ? "Logging in..." : "Log in"}
-          //disabled={submitting}
-        />
+        <FormButton type="submit" text="Log in" />
       </form>
 
       <SocialLogin />
